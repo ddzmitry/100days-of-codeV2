@@ -45,9 +45,20 @@ Amazon Cognito Hosted UI : https://docs.aws.amazon.com/cognito/latest/developerg
 https://<your_domain>/login?response_type=token&client_id=<your_app_client_id>&redirect_uri=<your_callback_url>
 
 <!-- Example calling cognito -->
-https://ddzmitryauth.auth.us-east-1.amazoncognito.com/login?response_type=token&client_id=2hllrlcgigvrpr67j8ccl2rtrg&redirect_uri=http://localhost:3000 
+https://ddzmitryauth-production.auth.us-east-1.amazoncognito.com/login?response_type=token&client_id=40gtgdr5epltjsl3r1msrsm8vl&redirect_uri=http://localhost:3000 
 
 Example callback
 http://localhost:3000/#id_token=SOMECOOLJWTTOKEN&expires_in=3600&token_type=Bearer
 
+
+
+
+```
+
+####  Day 4  Serverless Using Environment Variables and Setting up github actions
+```bash
+# To get serverless Starter for github actions https://github.com/marketplace?type=&verification=&query=serverless+ 
+# to remove resources 
+sls remove
+sls remove --stage demo
 ```
