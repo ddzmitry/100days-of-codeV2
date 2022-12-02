@@ -33,6 +33,12 @@ cognitoUserPoolWebClient:
       - email
       - openid
       - profile
+    # For testing
+    ExplicitAuthFlows:
+      - ALLOW_ADMIN_USER_PASSWORD_AUTH
+      - ALLOW_REFRESH_TOKEN_AUTH
+      - ALLOW_CUSTOM_AUTH
+      - ALLOW_USER_SRP_AUTH
     # Add callback
     CallbackURLs:
       - http://localhost:3000

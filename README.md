@@ -62,3 +62,16 @@ http://localhost:3000/#id_token=SOMECOOLJWTTOKEN&expires_in=3600&token_type=Bear
 sls remove
 sls remove --stage demo
 ```
+
+####  Day 5  Testing with Jest and Caching on API GW 
+> Gotcha API GW authorizer caches session and need to be set TTL to equal 0 , that way we can  test requests properly. (bad fix )
+> https://aws.amazon.com/premiumsupport/knowledge-center/api-gateway-lambda-authorization-errors/ ( GOOD fix)
+
+```javascript
+// "arn:aws:execute-api:<region>:<account>:<API_id>/<stage>/<http-method>/[<resource-path-name>/[<child-resources-path>]"
+    const tmp = event.methodArn.split(':');
+    const apiGatewayArnTmp = tmp[5].split('/');
+
+    // Create wildcard resource
+    const resource = tmp[0] + ":" + tmp[1] + ":" + tmp[2] + ":" + tmp[3] + ":" + tmp[4] + ":" + apiGatewayArnTmp[0] + '/*/*'; 
+```

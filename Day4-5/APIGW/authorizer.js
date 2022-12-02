@@ -12,8 +12,13 @@ const jwtVerifier = CognitoJwtVerifier.create({
 });
 
 const generatePolicy = (principalId, effect, resource) => {
+  const tmp = resource.methodArn.split(':');
+  const apiGatewayArnTmp = tmp[5].split('/');
+  // Create wildcard resource
+  const resource = tmp[0] + ":" + tmp[1] + ":" + tmp[2] + ":" + tmp[3] + ":" + tmp[4] + ":" + apiGatewayArnTmp[0] + '/*/*';   
   var authReponse = {};
   authReponse.principalId = principalId;
+  
   if (effect && resource) {
     let policyDocument = {
       Version: "2012-10-17",
