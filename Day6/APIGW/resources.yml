@@ -1,0 +1,63 @@
+# Notes DynamoDB table
+notesTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: notes-${self:provider.stage}
+    BillingMode: PAY_PER_REQUEST
+    AttributeDefinitions:
+      - AttributeName: notesId
+        AttributeType: S
+    KeySchema:
+      - AttributeName: notesId
+        # Hash Key
+        KeyType: HASH
+
+# Cognito user pool
+cognitoUserPool:
+  Type: AWS::Cognito::UserPool
+  Properties:
+    UserPoolName: MyNotesUP-${self:provider.stage}
+
+# User Pool web client 
+cognitoUserPoolWebClient:
+  Type: AWS::Cognito::UserPoolClient
+  Properties:
+    # User pool id
+    UserPoolId: !Ref cognitoUserPool
+    ClientName: web-${self:provider.stage}
+    # Add implisit type
+    AllowedOAuthFlows:
+      - implicit
+    AllowedOAuthScopes:
+      - phone
+      - email
+      - openid
+      - profile
+    # For testing
+    ExplicitAuthFlows:
+      - ALLOW_ADMIN_USER_PASSWORD_AUTH
+      - ALLOW_REFRESH_TOKEN_AUTH
+      - ALLOW_CUSTOM_AUTH
+      - ALLOW_USER_SRP_AUTH
+    # Add callback
+    CallbackURLs:
+      - http://localhost:3000
+    AllowedOAuthFlowsUserPoolClient: true
+    #  setup for web
+    SupportedIdentityProviders:
+      - COGNITO
+
+#  Domain
+CognitoUserPoolDomain:
+  Type: AWS::Cognito::UserPoolDomain
+  Properties:
+    Domain: ddzmitryauth-${self:provider.stage}
+    UserPoolId: !Ref cognitoUserPool
+
+# SSM to store UserPool:
+UserPoolParameter:
+  Type: AWS::SSM::Parameter
+  Properties:
+    Name: /notes/${self:provider.stage}/userPoolId
+    Type: String
+    Value: !GetAtt cognitoUserPool.Arn

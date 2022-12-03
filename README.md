@@ -75,3 +75,15 @@ sls remove --stage demo
     // Create wildcard resource
     const resource = tmp[0] + ":" + tmp[1] + ":" + tmp[2] + ":" + tmp[3] + ":" + tmp[4] + ":" + apiGatewayArnTmp[0] + '/*/*'; 
 ```
+
+#### Day 6 TS configuration for serverless libraries 
+```
+  "devDependencies": {
+    "dotenv": "^16.0.3",
+    "jest": "^29.3.1",
+    "lodash": "^4.17.21",
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "serverless-plugin-typescript": "^2.1.4",
+    "typescript": "^4.9.3"
+  }
+```
