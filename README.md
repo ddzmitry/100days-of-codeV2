@@ -5,7 +5,15 @@
 #### Day 1 Dynamo Starter
 > Dynamo DB Inverted Index Research + CRUD with Deep Index Understanding 
 > Conrinue on Udemy Course [The Complete Guide to Build Serverless Applications on AWS](https://allylearning.udemy.com/course/building-rest-apis-with-serverless) 
-
+> Relationship
+![Relationship](Day1/Dynamo/Relationship.png)
+![Relationship](Day1/Dynamo/Diag.png)
+> Inverted Index
+![Interted Index](Day1/Dynamo/InvertedIndex.png)
+> Overload
+![Overload](Day1/Dynamo/Overload.png)
+> Secondary Index
+![Overload](Day1/Dynamo/SecondaryIndex.png)
 #### Day 2 Serverless Framework API GW 
 > Serverless  [Setup](https://www.serverless.com/framework/docs/providers/aws/guide/credentials/)  
 > Conrinue on Udemy Course [The Complete Guide to Build Serverless Applications on AWS](https://allylearning.udemy.com/course/building-rest-apis-with-serverless) 
@@ -86,4 +94,51 @@ sls remove --stage demo
     "serverless-plugin-typescript": "^2.1.4",
     "typescript": "^4.9.3"
   }
+```
+
+#### Day 7 Event Bridge 
+```json
+// Payload example rule that will be going to EventBridge 
+{
+  "version": "0",
+  "id": "2ead7826-ff14-191c-535d-f717c385dc92",
+  "detail-type": "orderCreated",
+  "source": "my-ecommerce-app",
+  "account": "197480905965",
+  "time": "2022-12-03T21:44:09Z",
+  "region": "us-east-1",
+  "resources": [],
+  "detail": {
+    "orderId": 100,
+    "quantity": 10
+  }
+}
+// Rule that we can apply
+//  Run rule for every event where source === "my-ecommerce-app" && detail-type === "orderCreated" && quantity > 5
+{
+  "source": ["my-ecommerce-app"],
+  "detail-type": ["orderCreated"],
+  "detail": {
+    "quantity": [ { "numeric": [ ">", 5 ] } ]
+  }
+}
+```
+> Use npx to start project `npx sls create --template aws-nodejs` and to deploy `npx sls deploy`
+> SQS - Visibility Timeout !Important (Recommended visibility timeout for SQS = 6 X Lambda Timeout) 
+```
+When a consumer receives and processes a message from a queue, the message remains in the queue. Amazon SQS doesn't automatically delete the message. Because Amazon SQS is a distributed system, there's no guarantee that the consumer actually receives the message (for example, due to a connectivity issue, or due to an issue in the consumer application). Thus, the consumer must delete the message from the queue after receiving and processing it.
+```
+```
+If
+Lambda Time Out - 6s
+And
+MaximumBatchingWindow - 5s
+Then:
+Visibility Timeout =  6*6s + 5 = 41s
+```
+> Look into ReportBatchItemFailures
+> API GW serverless Policy Alloews to directly push data to EventBus
+![Ex](Day7/APIGWPROXYtoEventBridge.png)
+```bash
+npx serverless plugin install -n serverless-apigateway-service-proxy
 ```

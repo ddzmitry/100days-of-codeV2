@@ -1,0 +1,55 @@
+
+service: eb-sqs-demo
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: events:PutEvents
+          Resource: !GetAtt EventBus.Arn 
+
+custom:
+  # DIRECT TO EVENT BEIDGE 
+  apiGatewayServiceProxies:
+    - eventbridge:
+        path: /eventbridge
+        method: post
+        source: 'fuel-app'
+        detailType: 'user-signup'
+        eventBusName: { Ref: EventBus }
+        cors: true
+
+functions:
+  putEvents:
+    handler: functions/putEvents.handler
+    environment:
+      EVENT_BUS_NAME: !Ref EventBus
+    # trigger - http
+    events:
+      - http:
+          path: /generate
+          method: post
+
+  processEventsLambda:
+    handler: functions/processEvent.handler
+    events:
+      - sqs: 
+          arn: !GetAtt TargetSQS.Arn
+          batchSize: 10
+          functionResponseType: "ReportBatchItemFailures"
+
+resources:
+  Resources:
+    ${file(resources.yml)}
+  Outputs:
+    EventBusName:
+      Value: !Ref EventBus
+plugins:
+  - serverless-apigateway-service-proxy
