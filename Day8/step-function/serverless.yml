@@ -1,0 +1,136 @@
+
+service: step-function
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, 'us-east-1'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action: dynamodb:*
+      Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/bookTable
+    - Effect: Allow
+      Action: dynamodb:*
+      Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/userTable
+
+functions:
+  checkInventory:
+    handler: handler.checkInventory
+  calculateTotal:
+    handler: handler.calculateTotal
+  redeemPoints:
+    handler: handler.redeemPoints
+  billCustomer:
+    handler: handler.billCustomer
+  restoreRedeemedPoints:
+    handler: handler.restoreRedeemPoints  
+
+#resources:
+#  Resources:
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
+
+stepFunctions:
+  stateMachines:
+    storeCheckoutFlow:
+      name: storeCheckoutFlow
+      definition:
+        StartAt: checkInventory
+        States:
+          # What is this state is about
+          checkInventory:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [checkInventory, Arn]
+            Catch:
+              - ErrorEquals: [BookNotFound]
+                Next: BookNotFoundError
+              - ErrorEquals: [BookOutOfStock]
+                Next: BookOutOfStockError
+            # will be item from dynamo 
+            ResultPath: "$.book"
+            Next: calculateTotal
+          calculateTotal:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [calculateTotal,Arn]
+            ResultPath: "$.total"
+            # if redeem is true run Redeem points and then run Bill Customer
+            # if redeem anything else go ahead and just bill customer  
+            Next: isRedeemNeeded
+          isRedeemNeeded:
+            Type: Choice
+            Choices:
+              - Variable: $.redeem
+                BooleanEquals: true
+                Next: RedeemPoints
+            Default: BillCustomer
+          RedeemPoints:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [redeemPoints,Arn]
+            # Update total with new total object with points 
+            ResultPath: "$.total"              
+            Catch:
+                # catch all errors
+              - ErrorEquals: [States.ALL]
+                Next: RedeemPointsError
+            Next: BillCustomer  
+          BillCustomer:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [billCustomer,Arn]
+            ResultPath: "$.billingStatus"
+            # Retry
+            Retry:
+              - ErrorEquals: [States.ALL]
+                MaxAttempts: 3
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: "$.customerBilling"
+                Next: BillingError
+            End: true    
+
+          #   Next: PrepareOrder
+          # PrepareOrder:
+          #   Type: Task
+
+          #Error flow
+          BookNotFoundError:
+            Type: Pass
+            Result: "No such book avaliable"
+            End: true
+          BookOutOfStockError:
+            Type: Pass
+            Result: "No such book out of stock"
+            End: true            
+              # arn of lambda function
+          RedeemPointsError:
+            Type: Pass
+            Result: "Error in redeem points"
+            End: true
+          BillingError:
+            Type: Pass
+            Result: "Billing Error"
+            ResultPath: "$.billingStatus"
+            Next: RestoreRedeemedPoints
+          RestoreRedeemedPoints:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [restoreRedeemedPoints,Arn]
+            End: true
+
+
+
+
+
+plugins:
+  - serverless-step-functions
+  - serverless-pseudo-parameters
