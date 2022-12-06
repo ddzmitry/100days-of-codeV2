@@ -142,3 +142,22 @@ Visibility Timeout =  6*6s + 5 = 41s
 ```bash
 npx serverless plugin install -n serverless-apigateway-service-proxy
 ```
+#### Day 8 Serverless Step Funcitons
+> https://states-language.net/ (State Language)
+> https://github.com/serverless-operations/serverless-step-functions (sls plugin)
+```
+npx serverless plugin install -n serverless-step-functions
+```
+```json
+// Field match IMPORTANT
+
+// Payload
+{
+    "bookid": "100",
+  	"quantity": 10
+}
+// Expectations
+// module.exports.checkInventory = async ({ bookid, quantity }) 
+
+```
+#### Day 8 Serverless Step Funcitons Wrap Up

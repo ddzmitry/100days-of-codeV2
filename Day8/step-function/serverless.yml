@@ -13,6 +13,15 @@ provider:
     - Effect: Allow
       Action: dynamodb:*
       Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/userTable
+    - Effect: Allow
+      Action: sns:*
+      Resource: arn:aws:sns:us-east-1:${AWS::AccountId}:NotifyCourier
+    - Effect: Allow
+      Action: sqs:*
+      Resource: arn:aws:sqs:us-east-1:${AWS::AccountId}:OrdersQueue
+    - Effect: Allow
+      Action: states:*
+      Resource: arn:aws:states:us-east-1:${AWS::AccountId}:stateMachine:storeCheckoutFlow
 
 functions:
   checkInventory:
@@ -23,19 +32,17 @@ functions:
     handler: handler.redeemPoints
   billCustomer:
     handler: handler.billCustomer
+  restoreQuantity:
+    handler: handler.restoreQuantity    
   restoreRedeemedPoints:
-    handler: handler.restoreRedeemPoints  
+    handler: handler.restoreRedeemPoints
+  sqsWorker:
+    handler: handler.sqsWorker
+    events:
+      - sqs:
+          arn: arn:aws:sqs:us-east-1:197480905965:OrdersQueue
+          batchSize: 1
 
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
 
 stepFunctions:
   stateMachines:
@@ -83,26 +90,60 @@ stepFunctions:
               - ErrorEquals: [States.ALL]
                 Next: RedeemPointsError
             Next: BillCustomer  
-          BillCustomer:
+            BillCustomer:
+              Type: Task
+              Resource:
+                Fn::GetAtt: [billCustomer, Arn]
+              ResultPath: "$.billingStatus"
+              Retry:
+                - ErrorEquals: [States.ALL]
+                  MaxAttempts: 0
+              Catch:
+                - ErrorEquals: [States.ALL]
+                  ResultPath: "$.customerBilling"
+                  Next: BillingError
+              Next: PrepareOrder
+          PrepareOrder: #Add to the queue, lambda worker, will allocate the quirier by calling a 3rd party api and reduce the amount from the item
+            Type: Task
+            Resource: arn:aws:states:::sqs:sendMessage.waitForTaskToken
+            Parameters:
+              QueueUrl: https://sqs.us-east-1.amazonaws.com/${AWS::AccountId}/OrdersQueue
+              MessageBody:
+                Input.$: "$"
+                Token.$: "$$.Task.Token" #From the context
+            ResultPath: "$.courierStatus"
+            Catch:
+              - ErrorEquals: [NoCourierAvailable]
+                ResultPath: "$.courierError"
+                Next: RefundCustomer
+            Next: DispatchOrder 
+          DispatchOrder:
+            Type: Task
+            Resource: arn:aws:states:::sns:publish
+            Parameters:
+              TopicArn: arn:aws:sns:us-east-1:${AWS::AccountId}:NotifyCourier
+              Message.$: "$"
+            Next: Dispatched
+          Dispatched:
+            Type: Pass
+            Result: "Your order will be dispatched in 24 hours"
+            End: true
+          RestoreRedeemPoints:
             Type: Task
             Resource:
-              Fn::GetAtt: [billCustomer,Arn]
-            ResultPath: "$.billingStatus"
-            # Retry
-            Retry:
-              - ErrorEquals: [States.ALL]
-                MaxAttempts: 3
-            Catch:
-              - ErrorEquals: [States.ALL]
-                ResultPath: "$.customerBilling"
-                Next: BillingError
-            End: true    
-
-          #   Next: PrepareOrder
-          # PrepareOrder:
-          #   Type: Task
-
-          #Error flow
+              Fn::GetAtt: [restoreRedeemPoints, Arn]
+            End: true
+          RestoreQuantity:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [restoreQuantity, Arn]
+            ResultPath: "$.quantityRestoreStatus"
+            Next: RestoreRedeemPoints
+          RefundCustomer:
+            Type: Pass
+            Result: "Customer is refunded"
+            ResultPath: "$.refundStatus"
+            Next: RestoreQuantity
           BookNotFoundError:
             Type: Pass
             Result: "No such book avaliable"

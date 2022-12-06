@@ -21,6 +21,20 @@ const deductPoints = async (userid) => {
   await DocumentClient.update(params).promise();
 };
 
+const updateBookQuantity = async (bookId, orderQuantity) => {
+  console.log("bookid: ", bookId);
+  console.log("orderQuantity: ", orderQuantity);
+  let params = {
+      TableName: 'bookTable',
+      Key: { 'bookid': bookId },
+      UpdateExpression: 'SET quantity = quantity - :orderQuantity',
+      ExpressionAttributeValues: {
+          ':orderQuantity': orderQuantity
+      }
+  };
+  await DocumentClient.update(params).promise();
+}
+
 module.exports.checkInventory = async ({ bookid, quantity }) => {
   try {
     let params = {
@@ -58,10 +72,7 @@ module.exports.calculateTotal = async ({ book, quantity }) => {
   return { total };
 };
 
-module.exports.redeemPoints = async () => {
-  // { userid, total }
-  const userid = '1'
-  const total = { 'total': 100000}
+module.exports.redeemPoints = async ({ userid, total }) => {
   console.log("{ userid, total }",{ userid, total })
   let orderTotal = total.total;
   try {
@@ -77,9 +88,7 @@ module.exports.redeemPoints = async () => {
     let user = result.Item;
     console.log("user: ", user);
     const points = user.points;
-    console.log("orderTotal",orderTotal)
     console.log("points: ", points);
-    console.log("orderTotal > points",orderTotal > points)
     if (orderTotal > points) {
       await deductPoints(userid);
       orderTotal = orderTotal - points;
@@ -117,4 +126,47 @@ module.exports.restoreRedeemPoints = async ({ userid, total }) => {
   } catch (e) {
       throw new Error(e);
   }
+}
+
+
+module.exports.sqsWorker = async (event) => {
+  try {
+      console.log(JSON.stringify(event));
+      let record = event.Records[0];
+      var body = JSON.parse(record.body);
+      /** Find a courier and attach courier information to the order */
+      let courier = ".@gmail.com";
+
+      // update book quantity
+      await updateBookQuantity(body.Input.bookid, body.Input.quantity);
+
+     // throw "Something wrong with Courier API";
+
+      // Attach curier information to the order
+      await StepFunction.sendTaskSuccess({
+          output: JSON.stringify({ courier }),
+          taskToken: body.Token
+      }).promise();
+  } catch (e) {
+      console.log("===== You got an Error =====");
+      console.log(e);
+      await StepFunction.sendTaskFailure({
+          error: "NoCourierAvailable",
+          cause: "No couriers are available",
+          taskToken: body.Token
+      }).promise();
+  }
+}
+
+module.exports.restoreQuantity = async ({ bookid, quantity }) => {
+  let params = {
+      TableName: 'bookTable',
+      Key: { bookid: bookid },
+      UpdateExpression: 'set quantity = quantity + :orderQuantity',
+      ExpressionAttributeValues: {
+          ':orderQuantity': quantity
+      }
+  };
+  await DocumentClient.update(params).promise();
+  return "Quantity restored"
 }

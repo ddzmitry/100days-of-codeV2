@@ -1,2 +1,6 @@
 {
+    "yaml.schemas": {
+        "kubernetes": "*.yaml",
+        "https://raw.githubusercontent.com/lalcebo/json-schema/master/serverless/reference.json": "file:///Users/dzmitrydubarau/Documents/project/100days-of-codeV2/Day8/step-function/serverless.yml"
+    }
 }
