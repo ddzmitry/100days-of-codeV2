@@ -160,4 +160,6 @@ npx serverless plugin install -n serverless-step-functions
 // module.exports.checkInventory = async ({ bookid, quantity }) 
 
 ```
-#### Day 8 Serverless Step Funcitons Wrap Up
+#### Day 9 Serverless Step Funcitons Wrap Up
+
+#### Day 10 HackerRank DiagonalMatrix Difference + few more Algos
