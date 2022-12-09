@@ -162,4 +162,6 @@ npx serverless plugin install -n serverless-step-functions
 ```
 #### Day 9 Serverless Step Funcitons Wrap Up
 
-#### Day 10 HackerRank DiagonalMatrix Difference + few more Algos
+#### Day 10-11 HackerRank DiagonalMatrix Difference + few more Algos
+
+#### Day 12 WAF rules with cloudfront

@@ -10,6 +10,8 @@ function staircase(n) {
       }
       t = n;
       // console.log(i)
+    //   Works as well
+      //   let int = Array(6).fill().map((v,i)=>" ").fill("#", i - 1, n);
       let int = stepper.fill("#", i - 1, n);
       arr.push(int.join(""));
       // fill with 0 from position 2 until position 4
@@ -24,13 +26,3 @@ function staircase(n) {
 
 // MIN Max Sum
 
-function miniMaxSum(arr) {
-    let sorted = arr.sort()
-    let forSmallest = sorted.slice(0,sorted.length -1);
-    let forBiggest = sorted.slice(1,sorted.length);
-    let smallest = forSmallest.reduce((x,y) => x+y)
-    let biggest = forBiggest.reduce((x,y) => x+y)
-    // Write your code here
-    console.log(`${smallest} ${biggest}`) 
-
-}
