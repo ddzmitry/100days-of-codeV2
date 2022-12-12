@@ -167,3 +167,7 @@ npx serverless plugin install -n serverless-step-functions
 #### Day 12 WAF rules with cloudfront
 
 #### Day 13 WAF rules with cloudfront
+
+#### Day 14 Amplify getting started
+
+#### Day 15 HR Challanges
