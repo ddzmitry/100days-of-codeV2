@@ -171,3 +171,5 @@ npx serverless plugin install -n serverless-step-functions
 #### Day 14 Amplify getting started
 
 #### Day 15 HR Challanges
+
+#### Day 16 Dynamo Work Code Indexing
