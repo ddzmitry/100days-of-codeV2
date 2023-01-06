@@ -177,3 +177,6 @@ npx serverless plugin install -n serverless-step-functions
 #### Day 17 ECS/Docker
 
 #### Day 18 Dynamo Research more on ECS
+
+
+#### Day 19 Tensorflow JS
